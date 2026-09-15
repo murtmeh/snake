@@ -57,6 +57,10 @@ struct ContentView: View {
         .onAppear {
             viewModel.reset()
             viewModel.refreshAvailablePortPaths()
+            if selectedPortPath == nil, let onlyPortPath = viewModel.availablePortPaths.first,
+               viewModel.availablePortPaths.count == 1 {
+                selectedPortPath = onlyPortPath
+            }
         }
     }
 }

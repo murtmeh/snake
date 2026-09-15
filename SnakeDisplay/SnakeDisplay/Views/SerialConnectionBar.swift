@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct SerialConnectionBar: View {
+    private static let portRefreshInterval = Duration.seconds(1)
+
     let viewModel: PresentationViewModel
     @Binding var selectedPortPath: String?
     @Binding var selectedBaudRate: Int
@@ -19,9 +21,6 @@ struct SerialConnectionBar: View {
             case .disconnected, .failed:
                 portPicker
                 baudRatePicker
-                Button("Refresh") {
-                    viewModel.refreshAvailablePortPaths()
-                }
                 Button("Connect") {
                     guard let selectedPortPath else { return }
                     Task { await viewModel.connect(to: selectedPortPath, baudRate: selectedBaudRate) }
@@ -58,6 +57,22 @@ struct SerialConnectionBar: View {
                 .toggleStyle(.button)
                 .labelStyle(.iconOnly)
                 .help("Show raw serial messages")
+        }
+        // The port picker is a native macOS menu, which opens on mouse-down before any
+        // SwiftUI tap gesture can react. Instead of refreshing on click, keep the list
+        // current with periodic polling.
+        .task {
+            while !Task.isCancelled {
+                if case .connected = viewModel.connectionState {
+                    // No picker is visible while connected; nothing to refresh.
+                } else {
+                    viewModel.refreshAvailablePortPaths()
+                    if let selectedPortPath, !viewModel.availablePortPaths.contains(selectedPortPath) {
+                        self.selectedPortPath = nil
+                    }
+                }
+                try? await Task.sleep(for: Self.portRefreshInterval)
+            }
         }
     }
 
