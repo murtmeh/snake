@@ -1,3 +1,18 @@
+function sendSnake (receiver: string, localWall: number, localExitPos: number) {
+    exitWall = 0
+    if (localWall == 1) {
+    	
+    } else if (false) {
+    	
+    } else if (false) {
+    	
+    } else {
+    	
+    }
+    // protocol, ...
+    // 0, receiver, sender, wall-id, position, snake-length
+    radio.sendString("0" + "," + "" + "," + thisid + "," + "" + "," + "")
+}
 function createSnake () {
     hetaOrmen = []
     alive = true
@@ -18,8 +33,8 @@ input.onButtonPressed(Button.A, function () {
     }
 })
 function setBrightness () {
-    for (let index = 0; index <= hetaOrmen.length - 1; index++) {
-        hetaOrmen[index].set(LedSpriteProperty.Brightness, 255 - index * (255 / snakeLength))
+    for (let index2 = 0; index2 <= hetaOrmen.length - 1; index2++) {
+        hetaOrmen[index2].set(LedSpriteProperty.Brightness, 255 - index2 * (255 / snakeLength))
     }
 }
 function moveSnake () {
@@ -36,7 +51,14 @@ function moveSnake () {
     hetaOrmen.unshift(head)
     setBrightness()
 }
+// //     1
+// //   [^^^]
+// // 4 [   ] 2
+// //   [___]
+//        3
+// 0 is "not specified"
 function moveCheck () {
+    exitWall = 0
     if (hetaOrmen[0].get(LedSpriteProperty.X) >= 4 && direction == 0) {
         exitWall = 2
         hetaOrmen[0].set(LedSpriteProperty.X, 0)
@@ -60,7 +82,6 @@ input.onButtonPressed(Button.B, function () {
         direction = 0
     }
 })
-let exitWall = 0
 let head: game.LedSprite = null
 let tail: game.LedSprite = null
 let moveY = 0
@@ -70,11 +91,14 @@ let SnakeY = 0
 let SnakeX = 0
 let alive = false
 let hetaOrmen: game.LedSprite[] = []
+let exitWall = 0
+let thisid = 0
 let direction = 0
 let snakeLength = 0
 snakeLength = 4
 let timePaused = 750
 direction = 0
+thisid = control.deviceSerialNumber()
 music.setVolume(255)
 createSnake()
 basic.forever(function () {
