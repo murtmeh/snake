@@ -10,10 +10,14 @@ import Testing
 
 struct RadioMessageParserTests {
     @Test func parsesLitPixelsWithTheirBrightness() {
-        let update = RadioMessageParser.parse("1;-976498137;4,2,255;3,2,191.25;2,2,127.5;1,2,63.75;")
+        let message = RadioMessageParser.parse("1;-976498137;4,2,255;3,2,191.25;2,2,127.5;1,2,63.75;")
 
-        #expect(update?.serialNumber == -976_498_137)
-        #expect(update?.litPixels == [
+        guard case let .displayUpdate(update) = message else {
+            Issue.record("Expected a display update")
+            return
+        }
+        #expect(update.serialNumber == -976_498_137)
+        #expect(update.litPixels == [
             GridPoint(column: 4, row: 2): 255,
             GridPoint(column: 3, row: 2): 191.25,
             GridPoint(column: 2, row: 2): 127.5,
@@ -22,19 +26,42 @@ struct RadioMessageParserTests {
     }
 
     @Test func parsesAnEmptyDisplay() {
-        let update = RadioMessageParser.parse("1;-976498137;")
+        let message = RadioMessageParser.parse("1;-976498137;")
 
-        #expect(update?.serialNumber == -976_498_137)
-        #expect(update?.litPixels == [:])
+        guard case let .displayUpdate(update) = message else {
+            Issue.record("Expected a display update")
+            return
+        }
+        #expect(update.serialNumber == -976_498_137)
+        #expect(update.litPixels == [:])
+    }
+
+    @Test func parsesEachButtonPress() {
+        for (rawButton, expectedButton) in [("A", MicrobitButton.buttonA), ("B", .buttonB), ("A+B", .bothButtons)] {
+            let message = RadioMessageParser.parse("2;-976498137;\(rawButton);")
+
+            guard case let .buttonPress(event) = message else {
+                Issue.record("Expected a button press for \(rawButton)")
+                continue
+            }
+            #expect(event.serialNumber == -976_498_137)
+            #expect(event.button == expectedButton)
+        }
+    }
+
+    @Test func rejectsAnUnknownButton() {
+        #expect(RadioMessageParser.parse("2;-976498137;C;") == nil)
     }
 
     @Test func ignoresUnsupportedRadioKinds() {
-        #expect(RadioMessageParser.parse("2;-976498137;4,2,255;") == nil)
+        #expect(RadioMessageParser.parse("0;-976498137;4,2,255;") == nil)
+        #expect(RadioMessageParser.parse("3;-976498137;4,2,255;") == nil)
     }
 
     @Test func rejectsAMissingSerialNumber() {
         #expect(RadioMessageParser.parse("1;") == nil)
         #expect(RadioMessageParser.parse("1") == nil)
+        #expect(RadioMessageParser.parse("2;") == nil)
     }
 
     @Test func rejectsAMalformedCoordinate() {

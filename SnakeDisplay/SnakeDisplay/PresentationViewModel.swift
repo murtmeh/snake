@@ -25,6 +25,7 @@ final class PresentationViewModel {
     static let maximumLoggedMessages = 500
     static let defaultBaudRate = 115200
     static let standardBaudRates = [1200, 2400, 4800, 9600, 14400, 19200, 28800, 38400, 57600, 115200]
+    static let buttonFlashDuration = Duration.milliseconds(200)
 
     private(set) var displays: [MicrobitDisplay] = []
     private(set) var connectionState: ConnectionState = .disconnected
@@ -87,15 +88,40 @@ final class PresentationViewModel {
             rawMessageLog.removeFirst(rawMessageLog.count - Self.maximumLoggedMessages)
         }
 
-        guard let update = RadioMessageParser.parse(line) else { return }
-        apply(update)
+        switch RadioMessageParser.parse(line) {
+        case let .displayUpdate(update):
+            apply(update)
+        case let .buttonPress(event):
+            apply(event)
+        case nil:
+            break
+        }
     }
 
     func apply(_ update: RadioDisplayUpdate) {
-        if let index = displays.firstIndex(where: { $0.serialNumber == update.serialNumber }) {
-            displays[index].litPixels = update.litPixels
-        } else if displays.count < Self.maximumMicrobitCount {
-            displays.append(MicrobitDisplay(serialNumber: update.serialNumber, litPixels: update.litPixels))
+        guard let index = ensureDisplayIndex(for: update.serialNumber) else { return }
+        displays[index].litPixels = update.litPixels
+    }
+
+    func apply(_ event: ButtonPressEvent) {
+        guard let index = ensureDisplayIndex(for: event.serialNumber) else { return }
+        displays[index].pressedButton = event.button
+
+        Task {
+            try? await Task.sleep(for: Self.buttonFlashDuration)
+            guard let index = self.displays.firstIndex(where: { $0.serialNumber == event.serialNumber }) else { return }
+            if self.displays[index].pressedButton == event.button {
+                self.displays[index].pressedButton = nil
+            }
         }
+    }
+
+    private func ensureDisplayIndex(for serialNumber: Int32) -> Int? {
+        if let index = displays.firstIndex(where: { $0.serialNumber == serialNumber }) {
+            return index
+        }
+        guard displays.count < Self.maximumMicrobitCount else { return nil }
+        displays.append(MicrobitDisplay(serialNumber: serialNumber, litPixels: [:]))
+        return displays.count - 1
     }
 }

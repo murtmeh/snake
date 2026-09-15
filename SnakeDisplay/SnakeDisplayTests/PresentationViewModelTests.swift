@@ -50,4 +50,34 @@ struct PresentationViewModelTests {
 
         #expect(viewModel.displays.isEmpty)
     }
+
+    @Test func aButtonPressMarksItsMicrobitAsFlashing() {
+        let viewModel = PresentationViewModel()
+
+        viewModel.apply(ButtonPressEvent(serialNumber: 1, button: .buttonA))
+
+        #expect(viewModel.displays.map(\.serialNumber) == [1])
+        #expect(viewModel.displays.first?.pressedButton == .buttonA)
+    }
+
+    @Test func aButtonPressStopsFlashingAfterTheFlashDuration() async throws {
+        let viewModel = PresentationViewModel()
+
+        viewModel.apply(ButtonPressEvent(serialNumber: 1, button: .buttonA))
+        try await Task.sleep(for: PresentationViewModel.buttonFlashDuration + .milliseconds(100))
+
+        #expect(viewModel.displays.first?.pressedButton == nil)
+    }
+
+    @Test func ignoresButtonPressesBeyondTheMaximum() {
+        let viewModel = PresentationViewModel()
+        for serialNumber in Int32(1)...Int32(PresentationViewModel.maximumMicrobitCount) {
+            viewModel.apply(RadioDisplayUpdate(serialNumber: serialNumber, litPixels: [:]))
+        }
+
+        viewModel.apply(ButtonPressEvent(serialNumber: 999, button: .buttonB))
+
+        #expect(viewModel.displays.count == PresentationViewModel.maximumMicrobitCount)
+        #expect(!viewModel.displays.contains { $0.serialNumber == 999 })
+    }
 }

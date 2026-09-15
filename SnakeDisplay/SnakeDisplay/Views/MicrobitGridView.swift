@@ -18,33 +18,61 @@ struct MicrobitGridView: View {
             Text("Microbit \(display.serialNumber)")
                 .font(.headline)
 
-            Grid(horizontalSpacing: 4, verticalSpacing: 4) {
-                ForEach(Self.gridRange, id: \.self) { row in
-                    GridRow {
-                        ForEach(Self.gridRange, id: \.self) { column in
-                            RoundedRectangle(cornerRadius: 3)
-                                .fill(Color.secondary.opacity(0.15))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 3)
-                                        .fill(Color.orange.opacity(brightnessFraction(column: column, row: row)))
-                                )
-                                .frame(width: 24, height: 24)
-                        }
-                    }
-                }
+            HStack(spacing: 8) {
+                ButtonIndicator(label: "A", isFlashing: isFlashing(.buttonA))
+                grid
+                ButtonIndicator(label: "B", isFlashing: isFlashing(.buttonB))
             }
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel("Microbit \(display.serialNumber) display")
-            .accessibilityValue("\(display.litPixels.count) of 25 pixels lit")
         }
         .padding()
         .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 12))
+    }
+
+    private var grid: some View {
+        Grid(horizontalSpacing: 4, verticalSpacing: 4) {
+            ForEach(Self.gridRange, id: \.self) { row in
+                GridRow {
+                    ForEach(Self.gridRange, id: \.self) { column in
+                        RoundedRectangle(cornerRadius: 3)
+                            .fill(Color.secondary.opacity(0.15))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 3)
+                                    .fill(Color.orange.opacity(brightnessFraction(column: column, row: row)))
+                            )
+                            .frame(width: 24, height: 24)
+                    }
+                }
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Microbit \(display.serialNumber) display")
+        .accessibilityValue("\(display.litPixels.count) of 25 pixels lit")
     }
 
     /// The pixel's brightness (0-255) scaled to a 0...1 fill opacity, unlit cells are 0.
     private func brightnessFraction(column: Int, row: Int) -> Double {
         let brightness = display.litPixels[GridPoint(column: column, row: row)] ?? 0
         return min(max(brightness / 255, 0), 1)
+    }
+
+    private func isFlashing(_ button: MicrobitButton) -> Bool {
+        display.pressedButton == button || display.pressedButton == .bothButtons
+    }
+}
+
+private struct ButtonIndicator: View {
+    let label: String
+    let isFlashing: Bool
+
+    var body: some View {
+        Text(label)
+            .font(.caption.bold())
+            .foregroundStyle(isFlashing ? Color.black : Color.secondary)
+            .frame(width: 22, height: 22)
+            .background(Circle().fill(isFlashing ? Color.yellow : Color.secondary.opacity(0.15)))
+            .animation(.easeOut(duration: 0.15), value: isFlashing)
+            .accessibilityLabel("Button \(label)")
+            .accessibilityValue(isFlashing ? "Pressed" : "Idle")
     }
 }
 
@@ -57,7 +85,8 @@ struct MicrobitGridView: View {
                 GridPoint(column: 3, row: 2): 191.25,
                 GridPoint(column: 2, row: 2): 127.5,
                 GridPoint(column: 1, row: 2): 63.75
-            ]
+            ],
+            pressedButton: .buttonA
         )
     )
     .padding()

@@ -10,4 +10,6 @@ nonisolated struct MicrobitDisplay: Identifiable, Hashable, Sendable {
     var id: Int32 { serialNumber }
     let serialNumber: Int32
     var litPixels: [GridPoint: Double]
+    /// The button currently mid-flash, if any; cleared automatically a moment after each press.
+    var pressedButton: MicrobitButton?
 }
