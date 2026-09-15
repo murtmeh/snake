@@ -1,3 +1,11 @@
+function sendDisplayState () {
+    displayStateMsg = "1" + ";" + control.deviceSerialNumber()
+    for (let displayIndex of hetaOrmen) {
+        displayStateMsg = "" + displayStateMsg + ";" + displayIndex.get(LedSpriteProperty.X) + "," + displayIndex.get(LedSpriteProperty.Y)
+    }
+    displayStateMsg = "" + displayStateMsg + ";"
+    serial.writeLine(displayStateMsg)
+}
 function createSnake () {
     hetaOrmen = []
     alive = true
@@ -36,6 +44,9 @@ function moveSnake () {
     hetaOrmen.unshift(head)
     setBrightness()
 }
+input.onButtonPressed(Button.AB, function () {
+    sendDisplayState()
+})
 function moveCheck () {
     if (hetaOrmen[0].get(LedSpriteProperty.X) >= 4 && direction == 0) {
         exitWall = 2
@@ -70,8 +81,15 @@ let SnakeY = 0
 let SnakeX = 0
 let alive = false
 let hetaOrmen: game.LedSprite[] = []
+let displayStateMsg = ""
 let direction = 0
 let snakeLength = 0
+radio.setGroup(69)
+serial.redirect(
+SerialPin.P0,
+SerialPin.P1,
+BaudRate.BaudRate9600
+)
 snakeLength = 4
 let timePaused = 750
 direction = 0
