@@ -1,10 +1,14 @@
 function sendDisplayState () {
     displayStateMsg = "1" + ";" + control.deviceSerialNumber()
     for (let displayIndex of hetaOrmen) {
-        displayStateMsg = "" + displayStateMsg + ";" + displayIndex.get(LedSpriteProperty.X) + "," + displayIndex.get(LedSpriteProperty.Y)
+        displayStateMsg = "" + displayStateMsg + ";" + displayIndex.get(LedSpriteProperty.X) + "," + displayIndex.get(LedSpriteProperty.Y) + "," + displayIndex.get(LedSpriteProperty.Brightness)
     }
     displayStateMsg = "" + displayStateMsg + ";"
-    serial.writeLine(displayStateMsg)
+    radio.sendString(displayStateMsg)
+}
+function sendButtonPress (button: string) {
+    buttonPressMsg = "2" + ";" + control.deviceSerialNumber() + ";" + button + ";"
+    radio.sendString(buttonPressMsg)
 }
 function createSnake () {
     hetaOrmen = []
@@ -19,10 +23,15 @@ function createSnake () {
     setBrightness()
 }
 input.onButtonPressed(Button.A, function () {
-    hetaOrmen[0].turn(Direction.Left, 90)
-    direction += -1
-    if (direction < 0) {
-        direction = 3
+    if (!(isRelay)) {
+        hetaOrmen[0].turn(Direction.Left, 90)
+        direction += -1
+        if (direction < 0) {
+            direction = 3
+        }
+        sendButtonPress("A")
+    } else {
+    	
     }
 })
 function setBrightness () {
@@ -45,7 +54,11 @@ function moveSnake () {
     setBrightness()
 }
 input.onButtonPressed(Button.AB, function () {
-    sendDisplayState()
+    if (!(isRelay)) {
+        sendButtonPress("A+B")
+    } else {
+    	
+    }
 })
 function moveCheck () {
     if (hetaOrmen[0].get(LedSpriteProperty.X) >= 4 && direction == 0) {
@@ -64,11 +77,25 @@ function moveCheck () {
         hetaOrmen[0].move(1)
     }
 }
+radio.onReceivedString(function (receivedString) {
+    if (!(isRelay)) {
+    	
+    } else {
+        if (receivedString.charAt(0) != "0") {
+            serial.writeLine(receivedString)
+        }
+    }
+})
 input.onButtonPressed(Button.B, function () {
-    hetaOrmen[0].turn(Direction.Right, 90)
-    direction += 1
-    if (direction > 3) {
-        direction = 0
+    if (!(isRelay)) {
+        hetaOrmen[0].turn(Direction.Right, 90)
+        direction += 1
+        if (direction > 3) {
+            direction = 0
+        }
+        sendButtonPress("B")
+    } else {
+    	
     }
 })
 let exitWall = 0
@@ -80,24 +107,39 @@ let newSprite: game.LedSprite = null
 let SnakeY = 0
 let SnakeX = 0
 let alive = false
+let buttonPressMsg = ""
 let hetaOrmen: game.LedSprite[] = []
 let displayStateMsg = ""
 let direction = 0
+let timePaused = 0
 let snakeLength = 0
+let isRelay = false
 radio.setGroup(69)
-serial.redirect(
-SerialPin.P0,
-SerialPin.P1,
-BaudRate.BaudRate9600
-)
-snakeLength = 4
-let timePaused = 750
-direction = 0
-music.setVolume(255)
-createSnake()
+if (input.buttonIsPressed(Button.A)) {
+    isRelay = true
+    basic.showLeds(`
+        . . # . .
+        . . # . .
+        # # # # #
+        # . # . #
+        # . # . #
+        `)
+} else {
+    isRelay = false
+    snakeLength = 4
+    timePaused = 750
+    direction = 0
+    music.setVolume(255)
+    createSnake()
+}
 basic.forever(function () {
-    if (alive == true) {
-        moveSnake()
+    if (!(isRelay)) {
+        if (alive == true) {
+            moveSnake()
+            sendDisplayState()
+        }
+        basic.pause(timePaused)
+    } else {
+    	
     }
-    basic.pause(timePaused)
 })
