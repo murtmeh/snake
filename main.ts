@@ -11,7 +11,6 @@ function createSnake () {
     setBrightness()
 }
 input.onButtonPressed(Button.A, function () {
-    music.play(music.createSoundExpression(WaveShape.Square, 400, 600, 255, 0, 100, SoundExpressionEffect.Warble, InterpolationCurve.Linear), music.PlaybackMode.InBackground)
     hetaOrmen[0].turn(Direction.Left, 90)
     direction += -1
     if (direction < 0) {
@@ -55,7 +54,6 @@ function moveCheck () {
     }
 }
 input.onButtonPressed(Button.B, function () {
-    music.play(music.createSoundExpression(WaveShape.Square, 400, 600, 255, 0, 100, SoundExpressionEffect.Warble, InterpolationCurve.Linear), music.PlaybackMode.InBackground)
     hetaOrmen[0].turn(Direction.Right, 90)
     direction += 1
     if (direction > 3) {
