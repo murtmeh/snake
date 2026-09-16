@@ -11,11 +11,14 @@ function createSnake () {
     setBrightness()
 }
 input.onButtonPressed(Button.A, function () {
-    music.play(music.createSoundExpression(WaveShape.Square, 400, 600, 255, 0, 100, SoundExpressionEffect.Warble, InterpolationCurve.Linear), music.PlaybackMode.InBackground)
-    hetaOrmen[0].turn(Direction.Left, 90)
-    direction += -1
-    if (direction < 0) {
-        direction = 3
+    if (buttonPressed == false) {
+        buttonPressed = true
+        music.play(music.createSoundExpression(WaveShape.Square, 400, 600, 255, 0, 100, SoundExpressionEffect.Warble, InterpolationCurve.Linear), music.PlaybackMode.InBackground)
+        hetaOrmen[0].turn(Direction.Left, 90)
+        direction += -1
+        if (direction < 0) {
+            direction = 3
+        }
     }
 })
 function setBrightness () {
@@ -55,11 +58,14 @@ function moveCheck () {
     }
 }
 input.onButtonPressed(Button.B, function () {
-    music.play(music.createSoundExpression(WaveShape.Square, 400, 600, 255, 0, 100, SoundExpressionEffect.Warble, InterpolationCurve.Linear), music.PlaybackMode.InBackground)
-    hetaOrmen[0].turn(Direction.Right, 90)
-    direction += 1
-    if (direction > 3) {
-        direction = 0
+    if (buttonPressed == false) {
+        buttonPressed = true
+        music.play(music.createSoundExpression(WaveShape.Square, 400, 600, 255, 0, 100, SoundExpressionEffect.Warble, InterpolationCurve.Linear), music.PlaybackMode.InBackground)
+        hetaOrmen[0].turn(Direction.Right, 90)
+        direction += 1
+        if (direction > 3) {
+            direction = 0
+        }
     }
 })
 let exitWall = 0
@@ -67,6 +73,7 @@ let head: game.LedSprite = null
 let tail: game.LedSprite = null
 let moveY = 0
 let moveX = 0
+let buttonPressed = false
 let newSprite: game.LedSprite = null
 let SnakeY = 0
 let SnakeX = 0
@@ -83,5 +90,6 @@ basic.forever(function () {
     if (alive == true) {
         moveSnake()
     }
+    buttonPressed = false
     basic.pause(timePaused)
 })
