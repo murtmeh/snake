@@ -30,6 +30,8 @@ function deleteSnake () {
     }
 }
 function createSnake (headX: number, headY: number, spriteDir: number) {
+    deleteSnake()
+    alive = true
     SnakeX = 0
     SnakeY = 0
     if (spriteDir == 0) {
@@ -49,7 +51,8 @@ function createSnake (headX: number, headY: number, spriteDir: number) {
     setBrightness()
 }
 input.onButtonPressed(Button.A, function () {
-    if (isSnakeOnScreen()) {
+    if (isSnakeOnScreen() && buttonPressed == false) {
+        buttonPressed = true
         hetaOrmen[0].turn(Direction.Left, 90)
         direction += -1
         if (direction < 0) {
@@ -68,8 +71,15 @@ function initGame (myId: string) {
         basic.showNumber(2 - index2)
     }
     createSnake(2, 2, 0)
+    createApple()
     radio.sendString("4")
 }
+input.onGesture(Gesture.Shake, function () {
+    if (appleExists) {
+        apple.delete()
+        createApple()
+    }
+})
 function setBrightness () {
     if (isSnakeOnScreen()) {
         for (let index22 = 0; index22 <= hetaOrmen.length - 1; index22++) {
@@ -83,11 +93,36 @@ function moveSnake () {
     moveCheck()
     if (isSnakeOnScreen()) {
         tail = hetaOrmen.pop()
+        oldTailX = tail.get(LedSpriteProperty.X)
+        oldTailY = tail.get(LedSpriteProperty.Y)
         tail.set(LedSpriteProperty.X, moveX)
         tail.set(LedSpriteProperty.Y, moveY)
         hetaOrmen.insertAt(1, tail)
         setBrightness()
+        kollakolission()
     }
+}
+function addSnake () {
+    newSprite = game.createSprite(oldTailX, oldTailY)
+    snakeLength += 1
+    hetaOrmen.push(newSprite)
+    setBrightness()
+}
+function createApple () {
+    AppleNotPlaced = true
+    while (AppleNotPlaced) {
+        appleX = randint(0, 4)
+        appleY = randint(0, 4)
+        AppleNotPlaced = false
+        for (let snakePart = 0; snakePart <= hetaOrmen.length - 1; snakePart++) {
+            if (hetaOrmen[snakePart].get(LedSpriteProperty.X) == appleX && hetaOrmen[snakePart].get(LedSpriteProperty.Y) == appleY) {
+                AppleNotPlaced = true
+            }
+        }
+    }
+    apple = game.createSprite(appleX, appleY)
+    apple.set(LedSpriteProperty.Blink, 250)
+    appleExists = true
 }
 input.onButtonPressed(Button.AB, function () {
     isInGame = true
@@ -146,12 +181,14 @@ radio.onReceivedString(function (receivedString) {
         radio.sendString("3" + "," + thisID)
     } else if (radioRecieve[0] == "4") {
         basic.clearScreen()
+        createApple()
     } else {
     	
     }
 })
 input.onButtonPressed(Button.B, function () {
-    if (isSnakeOnScreen()) {
+    if (isSnakeOnScreen() && buttonPressed == false) {
+        buttonPressed = true
         hetaOrmen[0].turn(Direction.Right, 90)
         direction += 1
         if (direction > 3) {
@@ -159,10 +196,30 @@ input.onButtonPressed(Button.B, function () {
         }
     }
 })
+function kollakolission () {
+    i = 1
+    for (let index = 0; index < snakeLength - 1; index++) {
+        if (hetaOrmen[0].get(LedSpriteProperty.X) == hetaOrmen[i].get(LedSpriteProperty.X) && hetaOrmen[0].get(LedSpriteProperty.Y) == hetaOrmen[i].get(LedSpriteProperty.Y)) {
+            alive = false
+            basic.clearScreen()
+            basic.showIcon(IconNames.Skull)
+        }
+        i += 1
+    }
+}
+let appleExists = false
+let i = 0
+let appleY = 0
+let appleX = 0
+let AppleNotPlaced = false
+let oldTailY = 0
+let oldTailX = 0
 let radioRecieve: string[] = []
 let tail: game.LedSprite = null
 let moveY = 0
 let moveX = 0
+let buttonPressed = false
+let apple: game.LedSprite = null
 let newSprite: game.LedSprite = null
 let SnakeY = 0
 let SnakeX = 0
@@ -175,7 +232,8 @@ let hetaOrmen: game.LedSprite[] = []
 let direction = 0
 let snakeLength = 0
 radio.setGroup(69)
-snakeLength = 4
+snakeLength = 2
+let points = 0
 let timePaused = 750
 direction = 0
 hetaOrmen = []
@@ -186,6 +244,13 @@ thisID = convertToText(randint(1000, 9999))
 basic.forever(function () {
     if (isSnakeOnScreen()) {
         moveSnake()
+        if (isSnakeOnScreen() && appleExists && hetaOrmen[0].isTouching(apple)) {
+            apple.delete()
+            points += 1
+            addSnake()
+            createApple()
+        }
     }
+    buttonPressed = false
     basic.pause(timePaused)
 })
