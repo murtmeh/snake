@@ -17,7 +17,15 @@ function sendSnake (receiver: string, localWall: number, localExitPos: number) {
     // position,
     // snake-length
     radio.sendString("0" + "," + allPlayers._pickRandom() + "," + thisID + "," + exitWall + "," + localExitPos + "," + snakeLength)
-    hetaOrmen = []
+    deleteSnake()
+}
+function isSnakeOnScreen () {
+    return alive == true && hetaOrmen.length != 0
+}
+function deleteSnake () {
+    for (let index = 0; index < hetaOrmen.length; index++) {
+        hetaOrmen.pop().delete()
+    }
 }
 function createSnake (headX: number, headY: number, direction: number) {
     SnakeX = 1
@@ -31,7 +39,7 @@ function createSnake (headX: number, headY: number, direction: number) {
     setBrightness()
 }
 input.onButtonPressed(Button.A, function () {
-    if (alive == true && hetaOrmen.length != 0) {
+    if (isSnakeOnScreen()) {
         hetaOrmen[0].turn(Direction.Left, 90)
         direction += -1
         if (direction < 0) {
@@ -53,7 +61,7 @@ function initGame (myId: string) {
     radio.sendString("4")
 }
 function setBrightness () {
-    if (alive == true && hetaOrmen.length != 0) {
+    if (isSnakeOnScreen()) {
         for (let index22 = 0; index22 <= hetaOrmen.length - 1; index22++) {
             hetaOrmen[index22].set(LedSpriteProperty.Brightness, 255 - index22 * (255 / snakeLength))
         }
@@ -64,7 +72,7 @@ function moveSnake () {
     moveY = hetaOrmen[0].get(LedSpriteProperty.Y)
     tail = hetaOrmen.pop()
     moveCheck()
-    if (alive == true && hetaOrmen.length != 0) {
+    if (isSnakeOnScreen()) {
         tail.set(LedSpriteProperty.X, moveX)
         tail.set(LedSpriteProperty.Y, moveY)
         hetaOrmen.reverse()
@@ -86,10 +94,9 @@ input.onButtonPressed(Button.AB, function () {
 // 3
 // 0 is "not specified"
 function moveCheck () {
-    if (alive == true && hetaOrmen.length != 0) {
+    if (isSnakeOnScreen()) {
         if (hetaOrmen[0].get(LedSpriteProperty.X) >= 4 && direction == 0) {
             sendSnake("0", 2, hetaOrmen[0].get(LedSpriteProperty.Y))
-            hetaOrmen = []
         } else if (hetaOrmen[0].get(LedSpriteProperty.X) <= 0 && direction == 2) {
             sendSnake("0", 4, hetaOrmen[0].get(LedSpriteProperty.Y))
         } else if (hetaOrmen[0].get(LedSpriteProperty.Y) <= 0 && direction == 3) {
@@ -102,10 +109,8 @@ function moveCheck () {
     }
 }
 radio.onReceivedString(function (receivedString) {
-    serial.writeLine(receivedString)
     radioRecieve = receivedString.split(",")
     if (radioRecieve[0] == "0" && radioRecieve[1] == thisID) {
-        serial.writeLine("p0")
         // if packet[3], which is the wall is 1, 3, 2 or implied 4, spawn the snake accordingly
         if (radioRecieve[3] == "1") {
             createSnake(parseFloat(radioRecieve[4]), 0, 0)
@@ -118,20 +123,16 @@ radio.onReceivedString(function (receivedString) {
         }
         snakeLength = parseFloat(radioRecieve[5])
     } else if (radioRecieve[0] == "3" && isInGame) {
-        serial.writeLine("p3-host")
         if (allPlayers.indexOf(radioRecieve[1]) == -1) {
-            serial.writeLine("" + (radioRecieve[1]))
             allPlayers.push(radioRecieve[1])
         }
     } else if (radioRecieve[0] == "3" && !(isInGame)) {
-        serial.writeLine("p3-client")
         isInGame = true
         if (allPlayers.indexOf(radioRecieve[1]) == -1) {
-            serial.writeLine("" + (radioRecieve[1]))
             allPlayers.push(radioRecieve[1])
         }
         basic.showIcon(IconNames.Yes)
-        basic.pause(100)
+        basic.pause(randint(100, 500))
         radio.sendString("3" + "," + thisID)
     } else if (radioRecieve[0] == "4") {
         basic.clearScreen()
@@ -140,7 +141,7 @@ radio.onReceivedString(function (receivedString) {
     }
 })
 input.onButtonPressed(Button.B, function () {
-    if (alive == true && hetaOrmen.length != 0) {
+    if (isSnakeOnScreen()) {
         hetaOrmen[0].turn(Direction.Right, 90)
         direction += 1
         if (direction > 3) {
@@ -174,7 +175,7 @@ alive = true
 isInGame = false
 thisID = convertToText(randint(1000, 9999))
 basic.forever(function () {
-    if (alive == true && hetaOrmen.length != 0) {
+    if (isSnakeOnScreen()) {
         moveSnake()
     }
     basic.pause(timePaused)
