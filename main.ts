@@ -16,7 +16,7 @@ function sendSnake (receiver: string, localWall: number, localExitPos: number) {
     // wall-id,
     // position,
     // snake-length
-    radio.sendString("0" + "," + thisID + "," + thisID + "," + exitWall + "," + localExitPos + "," + snakeLength)
+    radio.sendString("0" + "," + allPlayers._pickRandom() + "," + thisID + "," + exitWall + "," + localExitPos + "," + snakeLength)
     hetaOrmen = []
 }
 function createSnake (headX: number, headY: number, direction: number) {
@@ -39,16 +39,24 @@ input.onButtonPressed(Button.A, function () {
         }
     }
 })
-function initGame (myId: number) {
+function initGame (myId: string) {
     // protocol 3
     // 
     // 3,
     // myId,
     radio.sendString("3" + "," + myId)
+    basic.showNumber(3)
+    for (let index2 = 0; index2 <= 2; index2++) {
+        basic.showNumber(2 - index2)
+    }
+    createSnake(2, 2, 90)
+    radio.sendString("4")
 }
 function setBrightness () {
-    for (let index2 = 0; index2 <= hetaOrmen.length - 1; index2++) {
-        hetaOrmen[index2].set(LedSpriteProperty.Brightness, 255 - index2 * (255 / snakeLength))
+    if (alive == true && hetaOrmen.length != 0) {
+        for (let index22 = 0; index22 <= hetaOrmen.length - 1; index22++) {
+            hetaOrmen[index22].set(LedSpriteProperty.Brightness, 255 - index22 * (255 / snakeLength))
+        }
     }
 }
 function moveSnake () {
@@ -56,48 +64,77 @@ function moveSnake () {
     moveY = hetaOrmen[0].get(LedSpriteProperty.Y)
     tail = hetaOrmen.pop()
     moveCheck()
-    tail.set(LedSpriteProperty.X, moveX)
-    tail.set(LedSpriteProperty.Y, moveY)
-    hetaOrmen.reverse()
-    head = hetaOrmen.pop()
-    hetaOrmen.reverse()
-    hetaOrmen.unshift(tail)
-    hetaOrmen.unshift(head)
-    setBrightness()
+    if (alive == true && hetaOrmen.length != 0) {
+        tail.set(LedSpriteProperty.X, moveX)
+        tail.set(LedSpriteProperty.Y, moveY)
+        hetaOrmen.reverse()
+        head = hetaOrmen.pop()
+        hetaOrmen.reverse()
+        hetaOrmen.unshift(tail)
+        hetaOrmen.unshift(head)
+        setBrightness()
+    }
 }
+input.onButtonPressed(Button.AB, function () {
+    isInGame = true
+    initGame(thisID)
+})
 // //     1
 // //   #####
 // // 4 ##### 2
 // //   #####
-//        3
+// 3
 // 0 is "not specified"
 function moveCheck () {
-    if (hetaOrmen[0].get(LedSpriteProperty.X) >= 4 && direction == 0) {
-        sendSnake("0", 2, hetaOrmen[0].get(LedSpriteProperty.Y))
-        hetaOrmen = []
-    } else if (hetaOrmen[0].get(LedSpriteProperty.X) <= 0 && direction == 2) {
-        sendSnake("0", 4, hetaOrmen[0].get(LedSpriteProperty.Y))
-    } else if (hetaOrmen[0].get(LedSpriteProperty.Y) <= 0 && direction == 3) {
-        sendSnake("0", 1, hetaOrmen[0].get(LedSpriteProperty.X))
-    } else if (hetaOrmen[0].get(LedSpriteProperty.Y) >= 4 && direction == 1) {
-        sendSnake("0", 3, hetaOrmen[0].get(LedSpriteProperty.X))
-    } else {
-        hetaOrmen[0].move(1)
+    if (alive == true && hetaOrmen.length != 0) {
+        if (hetaOrmen[0].get(LedSpriteProperty.X) >= 4 && direction == 0) {
+            sendSnake("0", 2, hetaOrmen[0].get(LedSpriteProperty.Y))
+            hetaOrmen = []
+        } else if (hetaOrmen[0].get(LedSpriteProperty.X) <= 0 && direction == 2) {
+            sendSnake("0", 4, hetaOrmen[0].get(LedSpriteProperty.Y))
+        } else if (hetaOrmen[0].get(LedSpriteProperty.Y) <= 0 && direction == 3) {
+            sendSnake("0", 1, hetaOrmen[0].get(LedSpriteProperty.X))
+        } else if (hetaOrmen[0].get(LedSpriteProperty.Y) >= 4 && direction == 1) {
+            sendSnake("0", 3, hetaOrmen[0].get(LedSpriteProperty.X))
+        } else {
+            hetaOrmen[0].move(1)
+        }
     }
 }
 radio.onReceivedString(function (receivedString) {
+    serial.writeLine(receivedString)
     radioRecieve = receivedString.split(",")
-    if (radioRecieve[0] == "0") {
+    if (radioRecieve[0] == "0" && radioRecieve[1] == thisID) {
+        serial.writeLine("p0")
         // if packet[3], which is the wall is 1, 3, 2 or implied 4, spawn the snake accordingly
         if (radioRecieve[3] == "1") {
-            createSnake(parseFloat(radioRecieve[4]), 0, 180)
+            createSnake(parseFloat(radioRecieve[4]), 0, 0)
         } else if (radioRecieve[3] == "3") {
-            createSnake(parseFloat(radioRecieve[4]), 4, 0)
+            createSnake(parseFloat(radioRecieve[4]), 4, 180)
         } else if (radioRecieve[3] == "2") {
-            createSnake(4, parseFloat(radioRecieve[4]), 270)
+            createSnake(4, parseFloat(radioRecieve[4]), 90)
         } else {
-            createSnake(0, parseFloat(radioRecieve[4]), 90)
+            createSnake(0, parseFloat(radioRecieve[4]), 270)
         }
+        snakeLength = parseFloat(radioRecieve[5])
+    } else if (radioRecieve[0] == "3" && isInGame) {
+        serial.writeLine("p3-host")
+        if (allPlayers.indexOf(radioRecieve[1]) == -1) {
+            serial.writeLine("" + (radioRecieve[1]))
+            allPlayers.push(radioRecieve[1])
+        }
+    } else if (radioRecieve[0] == "3" && !(isInGame)) {
+        serial.writeLine("p3-client")
+        isInGame = true
+        if (allPlayers.indexOf(radioRecieve[1]) == -1) {
+            serial.writeLine("" + (radioRecieve[1]))
+            allPlayers.push(radioRecieve[1])
+        }
+        basic.showIcon(IconNames.Yes)
+        basic.pause(100)
+        radio.sendString("3" + "," + thisID)
+    } else if (radioRecieve[0] == "4") {
+        basic.clearScreen()
     } else {
     	
     }
@@ -120,8 +157,10 @@ let newSprite: game.LedSprite = null
 let SnakeY = 0
 let SnakeX = 0
 let exitWall = 0
-let thisID = 0
+let thisID = ""
+let isInGame = false
 let alive = false
+let allPlayers: string[] = []
 let hetaOrmen: game.LedSprite[] = []
 let direction = 0
 let snakeLength = 0
@@ -130,9 +169,10 @@ snakeLength = 4
 let timePaused = 750
 direction = 0
 hetaOrmen = []
+allPlayers = []
 alive = true
-thisID = control.deviceSerialNumber()
-initGame(thisID)
+isInGame = false
+thisID = convertToText(randint(1000, 9999))
 basic.forever(function () {
     if (alive == true && hetaOrmen.length != 0) {
         moveSnake()
