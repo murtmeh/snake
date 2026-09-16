@@ -11,10 +11,13 @@ function createSnake () {
     setBrightness()
 }
 input.onButtonPressed(Button.A, function () {
-    hetaOrmen[0].turn(Direction.Left, 90)
-    direction += -1
-    if (direction < 0) {
-        direction = 3
+    if (buttonPressed == false) {
+        buttonPressed = true
+        hetaOrmen[0].turn(Direction.Left, 90)
+        direction += -1
+        if (direction < 0) {
+            direction = 3
+        }
     }
 })
 input.onGesture(Gesture.Shake, function () {
@@ -81,10 +84,13 @@ function moveCheck () {
     }
 }
 input.onButtonPressed(Button.B, function () {
-    hetaOrmen[0].turn(Direction.Right, 90)
-    direction += 1
-    if (direction > 3) {
-        direction = 0
+    if (buttonPressed == false) {
+        buttonPressed = true
+        hetaOrmen[0].turn(Direction.Right, 90)
+        direction += 1
+        if (direction > 3) {
+            direction = 0
+        }
     }
 })
 function kollakolission () {
@@ -109,6 +115,7 @@ let oldTailX = 0
 let tail: game.LedSprite = null
 let moveY = 0
 let moveX = 0
+let buttonPressed = false
 let apple: game.LedSprite = null
 let newSprite: game.LedSprite = null
 let SnakeY = 0
@@ -117,11 +124,11 @@ let alive = false
 let hetaOrmen: game.LedSprite[] = []
 let direction = 0
 let snakeLength = 0
+snakeLength = 3
 let points = 0
 snakeLength = 2
 let timePaused = 750
 direction = 0
-music.setVolume(255)
 createSnake()
 createApple()
 basic.forever(function () {
@@ -137,5 +144,6 @@ basic.forever(function () {
             createApple()
         }
     }
+    buttonPressed = false
     basic.pause(timePaused)
 })
