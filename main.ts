@@ -16,25 +16,35 @@ function sendSnake (receiver: string, localWall: number, localExitPos: number) {
     // wall-id,
     // position,
     // snake-length
-    radio.sendString("0" + "," + allPlayers._pickRandom() + "," + thisID + "," + exitWall + "," + localExitPos + "," + snakeLength)
+    if (allPlayers.length > 0) {
+        radio.sendString("0" + "," + allPlayers._pickRandom() + "," + thisID + "," + exitWall + "," + localExitPos + "," + snakeLength)
+    }
     deleteSnake()
 }
 function isSnakeOnScreen () {
     return alive == true && hetaOrmen.length != 0
 }
 function deleteSnake () {
-    for (let index = 0; index < hetaOrmen.length; index++) {
+    while (hetaOrmen.length > 0) {
         hetaOrmen.pop().delete()
     }
 }
-function createSnake (headX: number, headY: number, direction: number) {
-    SnakeX = 1
-    SnakeY = 2
-    for (let index = 0; index < snakeLength; index++) {
-        newSprite = game.createSprite(SnakeX, SnakeY)
-        newSprite.set(LedSpriteProperty.Direction, direction)
+function createSnake (headX: number, headY: number, spriteDir: number) {
+    SnakeX = 0
+    SnakeY = 0
+    if (spriteDir == 0) {
+        SnakeX = 1
+    } else if (spriteDir == 90) {
+        SnakeY = 1
+    } else if (spriteDir == 180) {
+        SnakeX = -1
+    } else {
+        SnakeY = -1
+    }
+    for (let index = 0; index <= snakeLength - 1; index++) {
+        newSprite = game.createSprite(headX - SnakeX * index, headY - SnakeY * index)
+        newSprite.set(LedSpriteProperty.Direction, spriteDir)
         hetaOrmen.push(newSprite)
-        SnakeX += -1
     }
     setBrightness()
 }
@@ -57,7 +67,7 @@ function initGame (myId: string) {
     for (let index2 = 0; index2 <= 2; index2++) {
         basic.showNumber(2 - index2)
     }
-    createSnake(2, 2, 90)
+    createSnake(2, 2, 0)
     radio.sendString("4")
 }
 function setBrightness () {
@@ -70,16 +80,12 @@ function setBrightness () {
 function moveSnake () {
     moveX = hetaOrmen[0].get(LedSpriteProperty.X)
     moveY = hetaOrmen[0].get(LedSpriteProperty.Y)
-    tail = hetaOrmen.pop()
     moveCheck()
     if (isSnakeOnScreen()) {
+        tail = hetaOrmen.pop()
         tail.set(LedSpriteProperty.X, moveX)
         tail.set(LedSpriteProperty.Y, moveY)
-        hetaOrmen.reverse()
-        head = hetaOrmen.pop()
-        hetaOrmen.reverse()
-        hetaOrmen.unshift(tail)
-        hetaOrmen.unshift(head)
+        hetaOrmen.insertAt(1, tail)
         setBrightness()
     }
 }
@@ -112,16 +118,20 @@ radio.onReceivedString(function (receivedString) {
     radioRecieve = receivedString.split(",")
     if (radioRecieve[0] == "0" && radioRecieve[1] == thisID) {
         // if packet[3], which is the wall is 1, 3, 2 or implied 4, spawn the snake accordingly
-        if (radioRecieve[3] == "1") {
-            createSnake(parseFloat(radioRecieve[4]), 0, 0)
-        } else if (radioRecieve[3] == "3") {
-            createSnake(parseFloat(radioRecieve[4]), 4, 180)
-        } else if (radioRecieve[3] == "2") {
-            createSnake(4, parseFloat(radioRecieve[4]), 90)
-        } else {
-            createSnake(0, parseFloat(radioRecieve[4]), 270)
-        }
         snakeLength = parseFloat(radioRecieve[5])
+        if (radioRecieve[3] == "1") {
+            direction = 1
+            createSnake(parseFloat(radioRecieve[4]), 0, 90)
+        } else if (radioRecieve[3] == "3") {
+            direction = 3
+            createSnake(parseFloat(radioRecieve[4]), 4, 270)
+        } else if (radioRecieve[3] == "2") {
+            direction = 2
+            createSnake(4, parseFloat(radioRecieve[4]), 180)
+        } else {
+            direction = 0
+            createSnake(0, parseFloat(radioRecieve[4]), 0)
+        }
     } else if (radioRecieve[0] == "3" && isInGame) {
         if (allPlayers.indexOf(radioRecieve[1]) == -1) {
             allPlayers.push(radioRecieve[1])
@@ -150,7 +160,6 @@ input.onButtonPressed(Button.B, function () {
     }
 })
 let radioRecieve: string[] = []
-let head: game.LedSprite = null
 let tail: game.LedSprite = null
 let moveY = 0
 let moveX = 0
