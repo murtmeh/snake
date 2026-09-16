@@ -39,7 +39,7 @@ input.onButtonPressed(Button.A, function () {
         }
     }
 })
-function initGame (myId: number) {
+function initGame (myId: string) {
     // protocol 3
     // 
     // 3,
