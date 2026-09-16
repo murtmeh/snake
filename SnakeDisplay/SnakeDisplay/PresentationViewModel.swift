@@ -33,6 +33,7 @@ final class PresentationViewModel {
     private(set) var rawMessageLog: [String] = []
 
     private let connection: SerialPortConnection
+    private let messageAssembler = RadioMessageAssembler()
     private var readTask: Task<Void, Never>?
 
     init(connection: SerialPortConnection = SerialPortConnection()) {
@@ -48,6 +49,7 @@ final class PresentationViewModel {
 
         connectionState = .connecting
         rawMessageLog = []
+        messageAssembler.reset()
         do {
             let stream = try await connection.open(path: path, baudRate: speed_t(baudRate))
             connectionState = .connected(portPath: path)
@@ -88,7 +90,9 @@ final class PresentationViewModel {
             rawMessageLog.removeFirst(rawMessageLog.count - Self.maximumLoggedMessages)
         }
 
-        switch RadioMessageParser.parse(line) {
+        guard let message = messageAssembler.feed(line) else { return }
+
+        switch RadioMessageParser.parse(message) {
         case let .displayUpdate(update):
             apply(update)
         case let .buttonPress(event):
