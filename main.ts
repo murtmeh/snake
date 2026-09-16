@@ -4,11 +4,17 @@ function sendDisplayState () {
         displayStateMsg = "" + displayStateMsg + ";" + displayIndex.get(LedSpriteProperty.X) + "," + displayIndex.get(LedSpriteProperty.Y) + "," + displayIndex.get(LedSpriteProperty.Brightness)
     }
     displayStateMsg = "" + displayStateMsg + ";"
-    radio.sendString(displayStateMsg)
+    sendList = splitMsg(displayStateMsg)
+    for (let value of sendList) {
+        radio.sendString("" + (value))
+    }
 }
 function sendButtonPress (button: string) {
     buttonPressMsg = "2" + ";" + control.deviceSerialNumber() + ";" + button + ";"
-    radio.sendString(buttonPressMsg)
+    sendListButton = splitMsg(buttonPressMsg)
+    for (let value2 of sendListButton) {
+        radio.sendString("" + (value2))
+    }
 }
 function createSnake () {
     hetaOrmen = []
@@ -34,9 +40,21 @@ input.onButtonPressed(Button.A, function () {
     	
     }
 })
+function splitMsg (msg: string) {
+    let chunks: string[] = []
+    chunkCount = Math.ceil(msg.length / 18)
+    for (let index2 = 0; index2 <= chunkCount - 1; index2++) {
+        if (index2 == chunkCount - 1) {
+            chunks.push("" + msg.substr(index2 * 18, 18) + "!")
+        } else {
+            chunks.push("" + msg.substr(index2 * 18, 18) + ":")
+        }
+    }
+    return chunks
+}
 function setBrightness () {
-    for (let index = 0; index <= hetaOrmen.length - 1; index++) {
-        hetaOrmen[index].set(LedSpriteProperty.Brightness, 255 - index * (255 / snakeLength))
+    for (let index3 = 0; index3 <= hetaOrmen.length - 1; index3++) {
+        hetaOrmen[index3].set(LedSpriteProperty.Brightness, 255 - index3 * (255 / snakeLength))
     }
 }
 function moveSnake () {
@@ -81,9 +99,7 @@ radio.onReceivedString(function (receivedString) {
     if (!(isRelay)) {
     	
     } else {
-        if (receivedString.charAt(0) != "0") {
-            serial.writeLine(receivedString)
-        }
+        serial.writeLine(receivedString)
     }
 })
 input.onButtonPressed(Button.B, function () {
@@ -103,11 +119,14 @@ let head: game.LedSprite = null
 let tail: game.LedSprite = null
 let moveY = 0
 let moveX = 0
+let chunkCount = 0
 let newSprite: game.LedSprite = null
 let SnakeY = 0
 let SnakeX = 0
 let alive = false
+let sendListButton: string[] = []
 let buttonPressMsg = ""
+let sendList: string[] = []
 let hetaOrmen: game.LedSprite[] = []
 let displayStateMsg = ""
 let direction = 0
