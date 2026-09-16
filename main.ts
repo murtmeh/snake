@@ -13,7 +13,6 @@ function createSnake () {
 input.onButtonPressed(Button.A, function () {
     if (buttonPressed == false) {
         buttonPressed = true
-        music.play(music.createSoundExpression(WaveShape.Square, 400, 600, 255, 0, 100, SoundExpressionEffect.Warble, InterpolationCurve.Linear), music.PlaybackMode.InBackground)
         hetaOrmen[0].turn(Direction.Left, 90)
         direction += -1
         if (direction < 0) {
@@ -60,7 +59,6 @@ function moveCheck () {
 input.onButtonPressed(Button.B, function () {
     if (buttonPressed == false) {
         buttonPressed = true
-        music.play(music.createSoundExpression(WaveShape.Square, 400, 600, 255, 0, 100, SoundExpressionEffect.Warble, InterpolationCurve.Linear), music.PlaybackMode.InBackground)
         hetaOrmen[0].turn(Direction.Right, 90)
         direction += 1
         if (direction > 3) {
@@ -81,10 +79,9 @@ let alive = false
 let hetaOrmen: game.LedSprite[] = []
 let direction = 0
 let snakeLength = 0
-snakeLength = 4
+snakeLength = 3
 let timePaused = 750
 direction = 0
-music.setVolume(255)
 createSnake()
 basic.forever(function () {
     if (alive == true) {
