@@ -4,7 +4,7 @@ function createSnake () {
     SnakeX = 1
     SnakeY = 2
     for (let index = 0; index < snakeLength; index++) {
-        newSprite = game.createSprite(SnakeX, SnakeY)
+        newSprite = game.createSprite(2, SnakeY)
         hetaOrmen.push(newSprite)
         SnakeX += -1
     }
@@ -35,6 +35,7 @@ function moveSnake () {
     hetaOrmen.unshift(tail)
     hetaOrmen.unshift(head)
     setBrightness()
+    kollakolission()
 }
 function moveCheck () {
     if (hetaOrmen[0].get(LedSpriteProperty.X) >= 4 && direction == 0) {
@@ -60,6 +61,18 @@ input.onButtonPressed(Button.B, function () {
         direction = 0
     }
 })
+function kollakolission () {
+    i = 1
+    for (let index = 0; index < snakeLength - 1; index++) {
+        if (hetaOrmen[0].get(LedSpriteProperty.X) == hetaOrmen[i].get(LedSpriteProperty.X) && hetaOrmen[0].get(LedSpriteProperty.Y) == hetaOrmen[i].get(LedSpriteProperty.Y)) {
+            alive = false
+            basic.clearScreen()
+            basic.showIcon(IconNames.Skull)
+        }
+        i += 1
+    }
+}
+let i = 0
 let exitWall = 0
 let head: game.LedSprite = null
 let tail: game.LedSprite = null
