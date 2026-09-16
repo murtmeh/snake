@@ -6,14 +6,22 @@ function sendDisplayState () {
     displayStateMsg = "" + displayStateMsg + ";"
     sendList = splitMsg(displayStateMsg)
     for (let value of sendList) {
-        radio.sendString("" + (value))
+        if (isRelay) {
+            serial.writeLine("" + (value))
+        } else {
+            radio.sendString("" + (value))
+        }
     }
 }
 function sendButtonPress (button: string) {
     buttonPressMsg = "2" + ";" + control.deviceSerialNumber() + ";" + button + ";"
     sendListButton = splitMsg(buttonPressMsg)
     for (let value2 of sendListButton) {
-        radio.sendString("" + (value2))
+        if (isRelay) {
+            serial.writeLine("" + (value2))
+        } else {
+            radio.sendString("" + (value2))
+        }
     }
 }
 function createSnake () {
@@ -29,7 +37,7 @@ function createSnake () {
     setBrightness()
 }
 input.onButtonPressed(Button.A, function () {
-    if (!(isRelay)) {
+    if (isPlayer) {
         hetaOrmen[0].turn(Direction.Left, 90)
         direction += -1
         if (direction < 0) {
@@ -72,7 +80,7 @@ function moveSnake () {
     setBrightness()
 }
 input.onButtonPressed(Button.AB, function () {
-    if (!(isRelay)) {
+    if (isPlayer) {
         sendButtonPress("A+B")
     } else {
     	
@@ -103,7 +111,7 @@ radio.onReceivedString(function (receivedString) {
     }
 })
 input.onButtonPressed(Button.B, function () {
-    if (!(isRelay)) {
+    if (isPlayer) {
         hetaOrmen[0].turn(Direction.Right, 90)
         direction += 1
         if (direction > 3) {
@@ -133,6 +141,7 @@ let direction = 0
 let timePaused = 0
 let snakeLength = 0
 let isRelay = false
+let isPlayer = false
 radio.setGroup(69)
 if (input.buttonIsPressed(Button.A)) {
     isRelay = true
@@ -143,8 +152,20 @@ if (input.buttonIsPressed(Button.A)) {
         # . # . #
         # . # . #
         `)
+} else if (input.buttonIsPressed(Button.B)) {
+    isRelay = true
+    isPlayer = true
+    basic.showLeds(`
+        . . # . .
+        . . # . .
+        # # # # #
+        # . # . #
+        # . # . #
+        `)
 } else {
-    isRelay = false
+    isPlayer = true
+}
+if (isPlayer) {
     snakeLength = 4
     timePaused = 750
     direction = 0
@@ -152,7 +173,7 @@ if (input.buttonIsPressed(Button.A)) {
     createSnake()
 }
 basic.forever(function () {
-    if (!(isRelay)) {
+    if (isPlayer) {
         if (alive == true) {
             moveSnake()
             sendDisplayState()
