@@ -37,7 +37,7 @@ function createSnake () {
     setBrightness()
 }
 input.onButtonPressed(Button.A, function () {
-    if (isPlayer) {
+    if (isPlayer && alive) {
         hetaOrmen[0].turn(Direction.Left, 90)
         direction += -1
         if (direction < 0) {
@@ -111,7 +111,7 @@ radio.onReceivedString(function (receivedString) {
     }
 })
 input.onButtonPressed(Button.B, function () {
-    if (isPlayer) {
+    if (isPlayer && alive) {
         hetaOrmen[0].turn(Direction.Right, 90)
         direction += 1
         if (direction > 3) {
@@ -140,8 +140,8 @@ let displayStateMsg = ""
 let direction = 0
 let timePaused = 0
 let snakeLength = 0
-let isRelay = false
 let isPlayer = false
+let isRelay = false
 radio.setGroup(69)
 if (input.buttonIsPressed(Button.A)) {
     isRelay = true
