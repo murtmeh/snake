@@ -1,0 +1,11 @@
+reporter: "xcode"
+
+# Uncomment to treat all warnings as errors.
+# strict: false
+
+# Uncomment to treat all errors as warnings.
+# lenient: true
+
+disabled_rules:
+  - comma
+  - colon

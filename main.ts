@@ -11,6 +11,35 @@ function sendSnake (heading: number, exitPos: number) {
     }
     deleteSnake()
 }
+function sendDisplayState () {
+    displayStateMsg = "1" + ";" + control.deviceSerialNumber()
+    for (let displayIndex of hetaOrmen) {
+        displayStateMsg = "" + displayStateMsg + ";" + displayIndex.get(LedSpriteProperty.X) + "," + displayIndex.get(LedSpriteProperty.Y) + "," + displayIndex.get(LedSpriteProperty.Brightness)
+    }
+    displayStateMsg = "" + displayStateMsg + ";"
+    sendList = splitMsg(displayStateMsg)
+    for (let value of sendList) {
+        if (isRelay) {
+            serial.writeLine("" + (value))
+        } else {
+            radio.sendString("" + (value))
+        }
+    }
+}
+function isPresentationChunk (msg: string) {
+    return msg.charAt(msg.length - 1) == ":" || msg.charAt(msg.length - 1) == "!"
+}
+function sendButtonPress (button: string) {
+    buttonPressMsg = "2" + ";" + control.deviceSerialNumber() + ";" + button + ";"
+    sendListButton = splitMsg(buttonPressMsg)
+    for (let value2 of sendListButton) {
+        if (isRelay) {
+            serial.writeLine("" + (value2))
+        } else {
+            radio.sendString("" + (value2))
+        }
+    }
+}
 function isSnakeOnScreen () {
     return alive == true && hetaOrmen.length != 0
 }
@@ -42,11 +71,36 @@ function createSnake (headX: number, headY: number, heading: number) {
     setBrightness()
 }
 input.onButtonPressed(Button.A, function () {
-    if (isSnakeOnScreen() && buttonPressed == false) {
+    if (isPlayer && isSnakeOnScreen() && buttonPressed == false) {
         buttonPressed = true
         hetaOrmen[0].turn(Direction.Left, 90)
+        sendButtonPress("A")
     }
 })
+function sendDeath () {
+    deathMsg = "5" + ";" + control.deviceSerialNumber() + ";" + "death" + ";"
+    deathList = splitMsg(deathMsg)
+    for (let value3 of deathList) {
+        if (isRelay) {
+            serial.writeLine("" + (value3))
+        } else {
+            radio.sendString("" + (value3))
+        }
+    }
+}
+// presentation messages are split into chunks ending in ":" (more follows) or "!" (last chunk)
+function splitMsg (msg: string) {
+    let chunks: string[] = []
+    chunkCount = Math.ceil(msg.length / 18)
+    for (let index4 = 0; index4 <= chunkCount - 1; index4++) {
+        if (index4 == chunkCount - 1) {
+            chunks.push("" + msg.substr(index4 * 18, 18) + "!")
+        } else {
+            chunks.push("" + msg.substr(index4 * 18, 18) + ":")
+        }
+    }
+    return chunks
+}
 function initGame (myId: string) {
     // protocol 3
     // 
@@ -106,9 +160,12 @@ function createApple () {
     appleExists = true
 }
 input.onButtonPressed(Button.AB, function () {
-    if (!(isInGame)) {
-        isInGame = true
-        initGame(thisID)
+    if (isPlayer) {
+        sendButtonPress("A+B")
+        if (!(isInGame)) {
+            isInGame = true
+            initGame(thisID)
+        }
     }
 })
 // //      0
@@ -133,6 +190,16 @@ function moveCheck () {
     }
 }
 radio.onReceivedString(function (receivedString) {
+    if (isPresentationChunk(receivedString)) {
+        // presentation traffic is only for the relay to forward; its chunks can look like game messages
+        if (isRelay) {
+            serial.writeLine(receivedString)
+        }
+        return
+    }
+    if (!(isPlayer)) {
+        return
+    }
     radioRecieve = receivedString.split(",")
     if (radioRecieve[0] == "0" && radioRecieve[1] == thisID) {
         // the snake keeps its heading, so the heading alone says which wall it enters from
@@ -173,9 +240,10 @@ radio.onReceivedString(function (receivedString) {
     }
 })
 input.onButtonPressed(Button.B, function () {
-    if (isSnakeOnScreen() && buttonPressed == false) {
+    if (isPlayer && isSnakeOnScreen() && buttonPressed == false) {
         buttonPressed = true
         hetaOrmen[0].turn(Direction.Right, 90)
+        sendButtonPress("B")
     }
 })
 input.onGesture(Gesture.Shake, function () {
@@ -193,6 +261,7 @@ function kollakolission () {
     for (let index = 0; index < snakeLength - 1; index++) {
         if (hetaOrmen[0].get(LedSpriteProperty.X) == hetaOrmen[i].get(LedSpriteProperty.X) && hetaOrmen[0].get(LedSpriteProperty.Y) == hetaOrmen[i].get(LedSpriteProperty.Y)) {
             alive = false
+            sendDeath()
             if (appleExists) {
                 apple.delete()
                 appleExists = false
@@ -226,17 +295,48 @@ let oldTailX = 0
 let tail: game.LedSprite = null
 let moveY = 0
 let moveX = 0
+let chunkCount = 0
+let deathList: string[] = []
+let deathMsg = ""
 let buttonPressed = false
 let newSprite: game.LedSprite = null
 let SnakeY = 0
 let SnakeX = 0
+let sendListButton: string[] = []
+let buttonPressMsg = ""
+let sendList: string[] = []
+let displayStateMsg = ""
 let thisID = ""
 let isInGame = false
 let alive = false
 let allPlayers: string[] = []
 let hetaOrmen: game.LedSprite[] = []
 let snakeLength = 0
+let isPlayer = false
+let isRelay = false
 radio.setGroup(69)
+if (input.buttonIsPressed(Button.A)) {
+    isRelay = true
+    basic.showLeds(`
+        . . # . .
+        . . # . .
+        # # # # #
+        # . # . #
+        # . # . #
+        `)
+} else if (input.buttonIsPressed(Button.B)) {
+    isRelay = true
+    isPlayer = true
+    basic.showLeds(`
+        . . # . .
+        . . # . .
+        # # # # #
+        # . # . #
+        # . # . #
+        `)
+} else {
+    isPlayer = true
+}
 snakeLength = 2
 let timePaused = 750
 hetaOrmen = []
@@ -245,18 +345,24 @@ alive = true
 isInGame = false
 thisID = convertToText(randint(1000, 9999))
 basic.forever(function () {
-    if (isSnakeOnScreen()) {
-        moveSnake()
-        if (isSnakeOnScreen() && appleExists && hetaOrmen[0].isTouching(apple)) {
-            apple.delete()
-            points += 1
-            addSnake()
-            createApple()
+    if (isPlayer) {
+        if (isSnakeOnScreen()) {
+            moveSnake()
+            if (isSnakeOnScreen() && appleExists && hetaOrmen[0].isTouching(apple)) {
+                apple.delete()
+                points += 1
+                addSnake()
+                createApple()
+            }
+        } else if (!(alive)) {
+            // keep the skull on screen; nothing else should draw over it while dead
+            basic.showIcon(IconNames.Skull)
         }
-    } else if (!(alive)) {
-        // keep the skull on screen; nothing else should draw over it while dead
-        basic.showIcon(IconNames.Skull)
+        if (isInGame && alive) {
+            // an empty snake list tells the presentation the snake has left this screen
+            sendDisplayState()
+        }
+        buttonPressed = false
     }
-    buttonPressed = false
     basic.pause(timePaused)
 })
