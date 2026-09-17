@@ -106,8 +106,10 @@ function createApple () {
     appleExists = true
 }
 input.onButtonPressed(Button.AB, function () {
-    isInGame = true
-    initGame(thisID)
+    if (!(isInGame)) {
+        isInGame = true
+        initGame(thisID)
+    }
 })
 // //      0
 // //    #####
