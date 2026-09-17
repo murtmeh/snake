@@ -138,14 +138,20 @@ radio.onReceivedString(function (receivedString) {
         // the snake keeps its heading, so the heading alone says which wall it enters from
         snakeLength = parseFloat(radioRecieve[4])
         heading = parseFloat(radioRecieve[2])
-        if (heading == 0) {
-            createSnake(parseFloat(radioRecieve[3]), 4, 0)
-        } else if (heading == 90) {
-            createSnake(0, parseFloat(radioRecieve[3]), 90)
-        } else if (heading == 180) {
-            createSnake(parseFloat(radioRecieve[3]), 0, 180)
+        exitPos = parseFloat(radioRecieve[3])
+        if (alive) {
+            if (heading == 0) {
+                createSnake(exitPos, 4, 0)
+            } else if (heading == 90) {
+                createSnake(0, exitPos, 90)
+            } else if (heading == 180) {
+                createSnake(exitPos, 0, 180)
+            } else {
+                createSnake(4, exitPos, 270)
+            }
         } else {
-            createSnake(4, parseFloat(radioRecieve[3]), 270)
+            // already dead: pass the snake along untouched instead of taking it
+            sendSnake(heading, exitPos)
         }
     } else if (radioRecieve[0] == "3" && isInGame) {
         if (allPlayers.indexOf(radioRecieve[1]) == -1) {
@@ -189,12 +195,21 @@ function kollakolission () {
             alive = false
             basic.clearScreen()
             basic.showIcon(IconNames.Skull)
+            // pass the snake on to another player instead of letting it vanish
+            heading = getHeading()
+            if (heading == 90 || heading == 270) {
+                sendSnake(heading, hetaOrmen[0].get(LedSpriteProperty.Y))
+            } else {
+                sendSnake(heading, hetaOrmen[0].get(LedSpriteProperty.X))
+            }
+            return
         }
         i += 1
     }
 }
 let points = 0
 let i = 0
+let exitPos = 0
 let radioRecieve: string[] = []
 let heading = 0
 let appleExists = false
