@@ -12,6 +12,8 @@ struct MicrobitGridView: View {
     let display: MicrobitDisplay
 
     private static let gridRange = 0..<5
+    /// Matches the microbit's `LedSpriteProperty.Blink` interval for the food sprite.
+    private static let foodBlinkInterval: TimeInterval = 0.25
 
     var body: some View {
         VStack(spacing: 8) {
@@ -40,6 +42,11 @@ struct MicrobitGridView: View {
                                     RoundedRectangle(cornerRadius: 3)
                                         .fill(Color.orange.opacity(brightnessFraction(column: column, row: row)))
                                 )
+                                .overlay {
+                                    if isFood(column: column, row: row) {
+                                        foodPixel
+                                    }
+                                }
                                 .frame(width: 24, height: 24)
                         }
                     }
@@ -64,6 +71,25 @@ struct MicrobitGridView: View {
     private func brightnessFraction(column: Int, row: Int) -> Double {
         let brightness = display.litPixels[GridPoint(column: column, row: row)] ?? 0
         return min(max(brightness / 255, 0), 1)
+    }
+
+    /// Blinks locally, since the microbit only reports the food's position when it moves
+    /// rather than on every blink cycle. Driven by the clock rather than an animation, so it
+    /// blinks no matter when the first food update arrives.
+    private var foodPixel: some View {
+        TimelineView(.periodic(from: .now, by: Self.foodBlinkInterval)) { context in
+            RoundedRectangle(cornerRadius: 3)
+                .fill(Color.red)
+                .opacity(Self.isFoodBlinkVisible(at: context.date) ? 1 : 0)
+        }
+    }
+
+    private static func isFoodBlinkVisible(at date: Date) -> Bool {
+        Int(date.timeIntervalSinceReferenceDate / foodBlinkInterval) % 2 == 0
+    }
+
+    private func isFood(column: Int, row: Int) -> Bool {
+        display.foodPixel == GridPoint(column: column, row: row)
     }
 
     private func isFlashing(_ button: MicrobitButton) -> Bool {
@@ -97,7 +123,8 @@ private struct ButtonIndicator: View {
                 GridPoint(column: 2, row: 2): 127.5,
                 GridPoint(column: 1, row: 2): 63.75
             ],
-            pressedButton: .buttonA
+            pressedButton: .buttonA,
+            foodPixel: GridPoint(column: 1, row: 3)
         )
     )
     .padding()

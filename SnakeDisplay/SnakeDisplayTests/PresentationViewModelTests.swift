@@ -99,4 +99,22 @@ struct PresentationViewModelTests {
         #expect(viewModel.displays.count == PresentationViewModel.maximumMicrobitCount)
         #expect(!viewModel.displays.contains { $0.serialNumber == 999 })
     }
+
+    @Test func aFoodUpdateShowsTheFoodOnItsMicrobit() {
+        let viewModel = PresentationViewModel()
+
+        viewModel.apply(RadioFoodUpdate(serialNumber: 1, position: GridPoint(column: 1, row: 3)))
+
+        #expect(viewModel.displays.first?.foodPixel == GridPoint(column: 1, row: 3))
+    }
+
+    @Test func aFoodUpdateReplacesOnlyThatMicrobitsFood() {
+        let viewModel = PresentationViewModel()
+        viewModel.apply(RadioFoodUpdate(serialNumber: 1, position: GridPoint(column: 1, row: 3)))
+        viewModel.apply(RadioFoodUpdate(serialNumber: 2, position: GridPoint(column: 4, row: 0)))
+
+        viewModel.apply(RadioFoodUpdate(serialNumber: 1, position: GridPoint(column: 2, row: 2)))
+
+        #expect(viewModel.displays.map(\.foodPixel) == [GridPoint(column: 2, row: 2), GridPoint(column: 4, row: 0)])
+    }
 }

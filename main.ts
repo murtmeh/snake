@@ -1,5 +1,5 @@
 // protocol 0: hand the snake to another player
-//
+// 
 // 0,
 // receiverId,
 // heading (degrees: 0 up, 90 right, 180 down, 270 left),
@@ -10,14 +10,6 @@ function sendSnake (heading: number, exitPos: number) {
         radio.sendString("0" + "," + allPlayers._pickRandom() + "," + heading + "," + exitPos + "," + snakeLength)
     }
     deleteSnake()
-}
-function isSnakeOnScreen () {
-    return alive == true && hetaOrmen.length != 0
-}
-function deleteSnake () {
-    while (hetaOrmen.length > 0) {
-        hetaOrmen.pop().delete()
-    }
 }
 function sendDisplayState () {
     displayStateMsg = "1" + ";" + control.deviceSerialNumber()
@@ -34,6 +26,9 @@ function sendDisplayState () {
         }
     }
 }
+function isPresentationChunk (msg: string) {
+    return msg.charAt(msg.length - 1) == ":" || msg.charAt(msg.length - 1) == "!"
+}
 function sendButtonPress (button: string) {
     buttonPressMsg = "2" + ";" + control.deviceSerialNumber() + ";" + button + ";"
     sendListButton = splitMsg(buttonPressMsg)
@@ -43,6 +38,14 @@ function sendButtonPress (button: string) {
         } else {
             radio.sendString("" + (value2))
         }
+    }
+}
+function isSnakeOnScreen () {
+    return alive == true && hetaOrmen.length != 0
+}
+function deleteSnake () {
+    while (hetaOrmen.length > 0) {
+        hetaOrmen.pop().delete()
     }
 }
 // heading in degrees, same convention as the sprite: 0 up, 90 right, 180 down, 270 left
@@ -74,20 +77,6 @@ input.onButtonPressed(Button.A, function () {
         sendButtonPress("A")
     }
 })
-function initGame (myId: string) {
-    // protocol 3
-    //
-    // 3,
-    // myId,
-    radio.sendString("3" + "," + myId)
-    basic.showNumber(3)
-    for (let index2 = 0; index2 <= 2; index2++) {
-        basic.showNumber(2 - index2)
-    }
-    createSnake(2, 2, 0)
-    createApple()
-    radio.sendString("4")
-}
 function sendDeath () {
     deathMsg = "5" + ";" + control.deviceSerialNumber() + ";" + "death" + ";"
     deathList = splitMsg(deathMsg)
@@ -112,8 +101,19 @@ function splitMsg (msg: string) {
     }
     return chunks
 }
-function isPresentationChunk (msg: string) {
-    return msg.charAt(msg.length - 1) == ":" || msg.charAt(msg.length - 1) == "!"
+function initGame (myId: string) {
+    // protocol 3
+    // 
+    // 3,
+    // myId,
+    radio.sendString("3" + "," + myId)
+    basic.showNumber(3)
+    for (let index2 = 0; index2 <= 2; index2++) {
+        basic.showNumber(2 - index2)
+    }
+    createSnake(2, 2, 0)
+    createApple()
+    radio.sendString("4")
 }
 function setBrightness () {
     if (isSnakeOnScreen()) {
@@ -236,7 +236,7 @@ radio.onReceivedString(function (receivedString) {
         basic.clearScreen()
         createApple()
     } else {
-
+    	
     }
 })
 input.onButtonPressed(Button.B, function () {
@@ -295,20 +295,20 @@ let oldTailX = 0
 let tail: game.LedSprite = null
 let moveY = 0
 let moveX = 0
-let buttonPressed = false
 let chunkCount = 0
 let deathList: string[] = []
 let deathMsg = ""
+let buttonPressed = false
 let newSprite: game.LedSprite = null
 let SnakeY = 0
 let SnakeX = 0
-let thisID = ""
-let isInGame = false
-let alive = false
 let sendListButton: string[] = []
 let buttonPressMsg = ""
 let sendList: string[] = []
 let displayStateMsg = ""
+let thisID = ""
+let isInGame = false
+let alive = false
 let allPlayers: string[] = []
 let hetaOrmen: game.LedSprite[] = []
 let snakeLength = 0

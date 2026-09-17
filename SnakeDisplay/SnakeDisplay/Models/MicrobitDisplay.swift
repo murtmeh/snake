@@ -14,4 +14,7 @@ nonisolated struct MicrobitDisplay: Identifiable, Hashable, Sendable {
     var pressedButton: MicrobitButton?
     /// Whether this player has died; cleared once they start playing again.
     var isDead: Bool = false
+    /// The food's current pixel, if any has been reported. Rendered with its own blink animation,
+    /// since the microbit only reports it when it moves rather than on every blink cycle.
+    var foodPixel: GridPoint?
 }

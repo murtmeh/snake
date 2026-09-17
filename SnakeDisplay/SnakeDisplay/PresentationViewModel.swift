@@ -99,6 +99,8 @@ final class PresentationViewModel {
             apply(event)
         case let .death(event):
             apply(event)
+        case let .foodUpdate(update):
+            apply(update)
         case nil:
             break
         }
@@ -113,7 +115,14 @@ final class PresentationViewModel {
     func apply(_ event: DeathEvent) {
         guard let index = ensureDisplayIndex(for: event.serialNumber) else { return }
         displays[index].litPixels = [:]
+        displays[index].foodPixel = nil
         displays[index].isDead = true
+    }
+
+    /// Each microbit has at most one food, so a new position replaces that microbit's previous food.
+    func apply(_ update: RadioFoodUpdate) {
+        guard let index = ensureDisplayIndex(for: update.serialNumber) else { return }
+        displays[index].foodPixel = update.position
     }
 
     func apply(_ event: ButtonPressEvent) {

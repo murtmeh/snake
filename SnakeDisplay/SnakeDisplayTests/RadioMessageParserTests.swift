@@ -70,7 +70,24 @@ struct RadioMessageParserTests {
 
     @Test func ignoresUnsupportedRadioKinds() {
         #expect(RadioMessageParser.parse("0;-976498137;4,2,255;") == nil)
-        #expect(RadioMessageParser.parse("3;-976498137;4,2,255;") == nil)
+        #expect(RadioMessageParser.parse("7;-976498137;4,2,255;") == nil)
+    }
+
+    @Test func parsesFoodUpdate() {
+        let message = RadioMessageParser.parse("6;-976498137;4,2;")
+
+        guard case let .foodUpdate(update) = message else {
+            Issue.record("Expected a food update")
+            return
+        }
+        #expect(update.serialNumber == -976_498_137)
+        #expect(update.position == GridPoint(column: 4, row: 2))
+    }
+
+    @Test func rejectsAMalformedFoodUpdate() {
+        #expect(RadioMessageParser.parse("6;-976498137;garbage;") == nil)
+        #expect(RadioMessageParser.parse("6;-976498137;4;") == nil)
+        #expect(RadioMessageParser.parse("6;-976498137;") == nil)
     }
 
     @Test func rejectsAMissingSerialNumber() {

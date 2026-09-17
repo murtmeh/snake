@@ -24,17 +24,20 @@ nonisolated enum RadioMessage: Hashable, Sendable {
     case displayUpdate(RadioDisplayUpdate)
     case buttonPress(ButtonPressEvent)
     case death(DeathEvent)
+    case foodUpdate(RadioFoodUpdate)
 }
 
 /// Parses lines relayed over serial:
 /// - `1;-976498137;4,2,255;3,2,191.25;...;`: radio kind, serial number, lit pixels (x, y, brightness)
 /// - `2;-976498137;B;`: radio kind, serial number, the button pressed (`A`, `B`, or `A+B`)
 /// - `5;-976498137;death;`: radio kind, serial number, that player's death
+/// - `6;-976498137;2,3;`: radio kind, serial number, the food's position (x, y)
 nonisolated enum RadioMessageParser {
     private static let displayUpdateRadioKind = 1
     private static let buttonPressRadioKind = 2
     private static let deathRadioKind = 5
     private static let deathField = "death"
+    private static let foodUpdateRadioKind = 6
 
     static func parse(_ line: String) -> RadioMessage? {
         let fields = line.split(separator: ";", omittingEmptySubsequences: true)
@@ -49,6 +52,8 @@ nonisolated enum RadioMessageParser {
             return parseButtonPress(fields).map(RadioMessage.buttonPress)
         case deathRadioKind:
             return parseDeath(fields).map(RadioMessage.death)
+        case foodUpdateRadioKind:
+            return parseFoodUpdate(fields).map(RadioMessage.foodUpdate)
         default:
             return nil
         }
@@ -90,5 +95,20 @@ nonisolated enum RadioMessageParser {
             return nil
         }
         return DeathEvent(serialNumber: serialNumber)
+    }
+
+    private static func parseFoodUpdate(_ fields: [Substring]) -> RadioFoodUpdate? {
+        guard fields.count == 3, let serialNumber = Int32(fields[1]) else {
+            return nil
+        }
+
+        let components = fields[2].split(separator: ",")
+        guard components.count == 2,
+              let column = Int(components[0]),
+              let row = Int(components[1]) else {
+            return nil
+        }
+
+        return RadioFoodUpdate(serialNumber: serialNumber, position: GridPoint(column: column, row: row))
     }
 }
