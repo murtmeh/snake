@@ -69,6 +69,25 @@ struct PresentationViewModelTests {
         #expect(viewModel.displays.first?.pressedButton == nil)
     }
 
+    @Test func aDeathEventClearsPixelsAndMarksThePlayerDead() {
+        let viewModel = PresentationViewModel()
+        viewModel.apply(RadioDisplayUpdate(serialNumber: 1, litPixels: [GridPoint(column: 0, row: 0): 255]))
+
+        viewModel.apply(DeathEvent(serialNumber: 1))
+
+        #expect(viewModel.displays.first?.litPixels == [:])
+        #expect(viewModel.displays.first?.isDead == true)
+    }
+
+    @Test func aDisplayUpdateRevivesAPreviouslyDeadPlayer() {
+        let viewModel = PresentationViewModel()
+        viewModel.apply(DeathEvent(serialNumber: 1))
+
+        viewModel.apply(RadioDisplayUpdate(serialNumber: 1, litPixels: [GridPoint(column: 0, row: 0): 255]))
+
+        #expect(viewModel.displays.first?.isDead == false)
+    }
+
     @Test func ignoresButtonPressesBeyondTheMaximum() {
         let viewModel = PresentationViewModel()
         for serialNumber in Int32(1)...Int32(PresentationViewModel.maximumMicrobitCount) {

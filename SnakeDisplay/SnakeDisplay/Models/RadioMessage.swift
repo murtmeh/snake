@@ -16,17 +16,25 @@ nonisolated struct ButtonPressEvent: Hashable, Sendable {
     let button: MicrobitButton
 }
 
+nonisolated struct DeathEvent: Hashable, Sendable {
+    let serialNumber: Int32
+}
+
 nonisolated enum RadioMessage: Hashable, Sendable {
     case displayUpdate(RadioDisplayUpdate)
     case buttonPress(ButtonPressEvent)
+    case death(DeathEvent)
 }
 
 /// Parses lines relayed over serial:
 /// - `1;-976498137;4,2,255;3,2,191.25;...;`: radio kind, serial number, lit pixels (x, y, brightness)
 /// - `2;-976498137;B;`: radio kind, serial number, the button pressed (`A`, `B`, or `A+B`)
+/// - `5;-976498137;death;`: radio kind, serial number, that player's death
 nonisolated enum RadioMessageParser {
     private static let displayUpdateRadioKind = 1
     private static let buttonPressRadioKind = 2
+    private static let deathRadioKind = 5
+    private static let deathField = "death"
 
     static func parse(_ line: String) -> RadioMessage? {
         let fields = line.split(separator: ";", omittingEmptySubsequences: true)
@@ -39,6 +47,8 @@ nonisolated enum RadioMessageParser {
             return parseDisplayUpdate(fields).map(RadioMessage.displayUpdate)
         case buttonPressRadioKind:
             return parseButtonPress(fields).map(RadioMessage.buttonPress)
+        case deathRadioKind:
+            return parseDeath(fields).map(RadioMessage.death)
         default:
             return nil
         }
@@ -71,5 +81,14 @@ nonisolated enum RadioMessageParser {
             return nil
         }
         return ButtonPressEvent(serialNumber: serialNumber, button: button)
+    }
+
+    private static func parseDeath(_ fields: [Substring]) -> DeathEvent? {
+        guard fields.count == 3,
+              let serialNumber = Int32(fields[1]),
+              fields[2] == deathField else {
+            return nil
+        }
+        return DeathEvent(serialNumber: serialNumber)
     }
 }

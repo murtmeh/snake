@@ -53,6 +53,21 @@ struct RadioMessageParserTests {
         #expect(RadioMessageParser.parse("2;-976498137;C;") == nil)
     }
 
+    @Test func parsesADeathEvent() {
+        let message = RadioMessageParser.parse("5;-976498137;death;")
+
+        guard case let .death(event) = message else {
+            Issue.record("Expected a death event")
+            return
+        }
+        #expect(event.serialNumber == -976_498_137)
+    }
+
+    @Test func rejectsAMalformedDeathEvent() {
+        #expect(RadioMessageParser.parse("5;-976498137;dead;") == nil)
+        #expect(RadioMessageParser.parse("5;-976498137;") == nil)
+    }
+
     @Test func ignoresUnsupportedRadioKinds() {
         #expect(RadioMessageParser.parse("0;-976498137;4,2,255;") == nil)
         #expect(RadioMessageParser.parse("3;-976498137;4,2,255;") == nil)

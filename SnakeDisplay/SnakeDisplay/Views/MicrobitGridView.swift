@@ -29,24 +29,35 @@ struct MicrobitGridView: View {
     }
 
     private var grid: some View {
-        Grid(horizontalSpacing: 4, verticalSpacing: 4) {
-            ForEach(Self.gridRange, id: \.self) { row in
-                GridRow {
-                    ForEach(Self.gridRange, id: \.self) { column in
-                        RoundedRectangle(cornerRadius: 3)
-                            .fill(Color.secondary.opacity(0.15))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 3)
-                                    .fill(Color.orange.opacity(brightnessFraction(column: column, row: row)))
-                            )
-                            .frame(width: 24, height: 24)
+        ZStack {
+            Grid(horizontalSpacing: 4, verticalSpacing: 4) {
+                ForEach(Self.gridRange, id: \.self) { row in
+                    GridRow {
+                        ForEach(Self.gridRange, id: \.self) { column in
+                            RoundedRectangle(cornerRadius: 3)
+                                .fill(Color.secondary.opacity(0.15))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 3)
+                                        .fill(Color.orange.opacity(brightnessFraction(column: column, row: row)))
+                                )
+                                .frame(width: 24, height: 24)
+                        }
                     }
                 }
+            }
+
+            if display.isDead {
+                Image(systemName: "xmark.octagon.fill")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 64, height: 64)
+                    .foregroundStyle(.red)
+                    .accessibilityHidden(true)
             }
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Microbit \(display.serialNumber) display")
-        .accessibilityValue("\(display.litPixels.count) of 25 pixels lit")
+        .accessibilityValue(display.isDead ? "Player eliminated" : "\(display.litPixels.count) of 25 pixels lit")
     }
 
     /// The pixel's brightness (0-255) scaled to a 0...1 fill opacity, unlit cells are 0.
@@ -76,7 +87,7 @@ private struct ButtonIndicator: View {
     }
 }
 
-#Preview {
+#Preview("Alive") {
     MicrobitGridView(
         display: MicrobitDisplay(
             serialNumber: -97_649_137,
@@ -87,6 +98,18 @@ private struct ButtonIndicator: View {
                 GridPoint(column: 1, row: 2): 63.75
             ],
             pressedButton: .buttonA
+        )
+    )
+    .padding()
+}
+
+#Preview("Dead") {
+    MicrobitGridView(
+        display: MicrobitDisplay(
+            serialNumber: -97_649_137,
+            litPixels: [:],
+            pressedButton: nil,
+            isDead: true
         )
     )
     .padding()

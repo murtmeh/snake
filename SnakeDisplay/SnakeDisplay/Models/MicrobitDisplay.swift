@@ -12,4 +12,6 @@ nonisolated struct MicrobitDisplay: Identifiable, Hashable, Sendable {
     var litPixels: [GridPoint: Double]
     /// The button currently mid-flash, if any; cleared automatically a moment after each press.
     var pressedButton: MicrobitButton?
+    /// Whether this player has died; cleared once they start playing again.
+    var isDead: Bool = false
 }

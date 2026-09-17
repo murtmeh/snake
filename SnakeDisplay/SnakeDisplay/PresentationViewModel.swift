@@ -97,6 +97,8 @@ final class PresentationViewModel {
             apply(update)
         case let .buttonPress(event):
             apply(event)
+        case let .death(event):
+            apply(event)
         case nil:
             break
         }
@@ -105,6 +107,13 @@ final class PresentationViewModel {
     func apply(_ update: RadioDisplayUpdate) {
         guard let index = ensureDisplayIndex(for: update.serialNumber) else { return }
         displays[index].litPixels = update.litPixels
+        displays[index].isDead = false
+    }
+
+    func apply(_ event: DeathEvent) {
+        guard let index = ensureDisplayIndex(for: event.serialNumber) else { return }
+        displays[index].litPixels = [:]
+        displays[index].isDead = true
     }
 
     func apply(_ event: ButtonPressEvent) {
