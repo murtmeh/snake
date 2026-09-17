@@ -48,6 +48,17 @@ input.onButtonPressed(Button.A, function () {
     	
     }
 })
+function sendDeath () {
+    deathMsg = "5" + ";" + control.deviceSerialNumber() + "death"
+    deathList = splitMsg(deathMsg)
+    for (let value of deathList) {
+        if (isRelay) {
+            serial.writeLine("" + (value))
+        } else {
+            radio.sendString("" + (value))
+        }
+    }
+}
 function splitMsg (msg: string) {
     let chunks: string[] = []
     chunkCount = Math.ceil(msg.length / 18)
@@ -128,6 +139,8 @@ let tail: game.LedSprite = null
 let moveY = 0
 let moveX = 0
 let chunkCount = 0
+let deathList: string[] = []
+let deathMsg = ""
 let newSprite: game.LedSprite = null
 let SnakeY = 0
 let SnakeX = 0
