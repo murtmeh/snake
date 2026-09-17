@@ -193,6 +193,10 @@ function kollakolission () {
     for (let index = 0; index < snakeLength - 1; index++) {
         if (hetaOrmen[0].get(LedSpriteProperty.X) == hetaOrmen[i].get(LedSpriteProperty.X) && hetaOrmen[0].get(LedSpriteProperty.Y) == hetaOrmen[i].get(LedSpriteProperty.Y)) {
             alive = false
+            if (appleExists) {
+                apple.delete()
+                appleExists = false
+            }
             basic.clearScreen()
             basic.showIcon(IconNames.Skull)
             // pass the snake on to another player instead of letting it vanish
@@ -249,6 +253,9 @@ basic.forever(function () {
             addSnake()
             createApple()
         }
+    } else if (!(alive)) {
+        // keep the skull on screen; nothing else should draw over it while dead
+        basic.showIcon(IconNames.Skull)
     }
     buttonPressed = false
     basic.pause(timePaused)
