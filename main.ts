@@ -8,14 +8,6 @@ function sendSnake (receiver: string, localWall: number, localExitPos: number) {
     } else {
         exitWall = 2
     }
-    // protocol-number, ...
-    // 
-    // 0,
-    // receiver,
-    // sender,
-    // wall-id,
-    // position,
-    // snake-length
     if (allPlayers.length > 0) {
         radio.sendString("0" + "," + allPlayers._pickRandom() + "," + thisID + "," + exitWall + "," + localExitPos + "," + snakeLength)
     }
@@ -74,12 +66,6 @@ function initGame (myId: string) {
     createApple()
     radio.sendString("4")
 }
-input.onGesture(Gesture.Shake, function () {
-    if (appleExists) {
-        apple.delete()
-        createApple()
-    }
-})
 function setBrightness () {
     if (isSnakeOnScreen()) {
         for (let index22 = 0; index22 <= hetaOrmen.length - 1; index22++) {
@@ -156,16 +142,16 @@ radio.onReceivedString(function (receivedString) {
         snakeLength = parseFloat(radioRecieve[5])
         if (radioRecieve[3] == "1") {
             direction = 1
-            createSnake(parseFloat(radioRecieve[4]), 0, 90)
+            createSnake(parseFloat(radioRecieve[4]), 0, 180)
         } else if (radioRecieve[3] == "3") {
             direction = 3
-            createSnake(parseFloat(radioRecieve[4]), 4, 270)
+            createSnake(parseFloat(radioRecieve[4]), 4, 0)
         } else if (radioRecieve[3] == "2") {
             direction = 2
-            createSnake(4, parseFloat(radioRecieve[4]), 180)
+            createSnake(4, parseFloat(radioRecieve[4]), 270)
         } else {
             direction = 0
-            createSnake(0, parseFloat(radioRecieve[4]), 0)
+            createSnake(0, parseFloat(radioRecieve[4]), 90)
         }
     } else if (radioRecieve[0] == "3" && isInGame) {
         if (allPlayers.indexOf(radioRecieve[1]) == -1) {
@@ -196,6 +182,12 @@ input.onButtonPressed(Button.B, function () {
         }
     }
 })
+input.onGesture(Gesture.Shake, function () {
+    if (appleExists) {
+        apple.delete()
+        createApple()
+    }
+})
 function kollakolission () {
     i = 1
     for (let index = 0; index < snakeLength - 1; index++) {
@@ -207,19 +199,20 @@ function kollakolission () {
         i += 1
     }
 }
-let appleExists = false
+let points = 0
 let i = 0
+let radioRecieve: string[] = []
+let appleExists = false
+let apple: game.LedSprite = null
 let appleY = 0
 let appleX = 0
 let AppleNotPlaced = false
 let oldTailY = 0
 let oldTailX = 0
-let radioRecieve: string[] = []
 let tail: game.LedSprite = null
 let moveY = 0
 let moveX = 0
 let buttonPressed = false
-let apple: game.LedSprite = null
 let newSprite: game.LedSprite = null
 let SnakeY = 0
 let SnakeX = 0
@@ -233,9 +226,8 @@ let direction = 0
 let snakeLength = 0
 radio.setGroup(69)
 snakeLength = 2
-let points = 0
 let timePaused = 750
-direction = 0
+direction = 3
 hetaOrmen = []
 allPlayers = []
 alive = true
