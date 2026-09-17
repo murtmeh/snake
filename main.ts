@@ -1,15 +1,13 @@
-function sendSnake (receiver: string, localWall: number, localExitPos: number) {
-    if (localWall == 1) {
-        exitWall = 3
-    } else if (localWall == 2) {
-        exitWall = 4
-    } else if (localWall == 3) {
-        exitWall = 1
-    } else {
-        exitWall = 2
-    }
+// protocol 0: hand the snake to another player
+// 
+// 0,
+// receiverId,
+// heading (degrees: 0 up, 90 right, 180 down, 270 left),
+// position along the wall,
+// snakeLength
+function sendSnake (heading: number, exitPos: number) {
     if (allPlayers.length > 0) {
-        radio.sendString("0" + "," + allPlayers._pickRandom() + "," + thisID + "," + exitWall + "," + localExitPos + "," + snakeLength)
+        radio.sendString("0" + "," + allPlayers._pickRandom() + "," + heading + "," + exitPos + "," + snakeLength)
     }
     deleteSnake()
 }
@@ -21,23 +19,24 @@ function deleteSnake () {
         hetaOrmen.pop().delete()
     }
 }
-function createSnake (headX: number, headY: number, spriteDir: number) {
+// heading in degrees, same convention as the sprite: 0 up, 90 right, 180 down, 270 left
+function createSnake (headX: number, headY: number, heading: number) {
     deleteSnake()
     alive = true
     SnakeX = 0
     SnakeY = 0
-    if (spriteDir == 0) {
-        SnakeX = 1
-    } else if (spriteDir == 90) {
-        SnakeY = 1
-    } else if (spriteDir == 180) {
-        SnakeX = -1
-    } else {
+    if (heading == 0) {
         SnakeY = -1
+    } else if (heading == 90) {
+        SnakeX = 1
+    } else if (heading == 180) {
+        SnakeY = 1
+    } else {
+        SnakeX = -1
     }
     for (let index = 0; index <= snakeLength - 1; index++) {
         newSprite = game.createSprite(headX - SnakeX * index, headY - SnakeY * index)
-        newSprite.set(LedSpriteProperty.Direction, spriteDir)
+        newSprite.set(LedSpriteProperty.Direction, heading)
         hetaOrmen.push(newSprite)
     }
     setBrightness()
@@ -46,10 +45,6 @@ input.onButtonPressed(Button.A, function () {
     if (isSnakeOnScreen() && buttonPressed == false) {
         buttonPressed = true
         hetaOrmen[0].turn(Direction.Left, 90)
-        direction += -1
-        if (direction < 0) {
-            direction = 3
-        }
     }
 })
 function initGame (myId: string) {
@@ -114,22 +109,22 @@ input.onButtonPressed(Button.AB, function () {
     isInGame = true
     initGame(thisID)
 })
-// //     1
-// //   #####
-// // 4 ##### 2
-// //   #####
-// 3
-// 0 is "not specified"
+// //      0
+// //    #####
+// // 270 ##### 90
+// //    #####
+// //     180
 function moveCheck () {
     if (isSnakeOnScreen()) {
-        if (hetaOrmen[0].get(LedSpriteProperty.X) >= 4 && direction == 0) {
-            sendSnake("0", 2, hetaOrmen[0].get(LedSpriteProperty.Y))
-        } else if (hetaOrmen[0].get(LedSpriteProperty.X) <= 0 && direction == 2) {
-            sendSnake("0", 4, hetaOrmen[0].get(LedSpriteProperty.Y))
-        } else if (hetaOrmen[0].get(LedSpriteProperty.Y) <= 0 && direction == 3) {
-            sendSnake("0", 1, hetaOrmen[0].get(LedSpriteProperty.X))
-        } else if (hetaOrmen[0].get(LedSpriteProperty.Y) >= 4 && direction == 1) {
-            sendSnake("0", 3, hetaOrmen[0].get(LedSpriteProperty.X))
+        heading = getHeading()
+        if (heading == 90 && hetaOrmen[0].get(LedSpriteProperty.X) >= 4) {
+            sendSnake(heading, hetaOrmen[0].get(LedSpriteProperty.Y))
+        } else if (heading == 270 && hetaOrmen[0].get(LedSpriteProperty.X) <= 0) {
+            sendSnake(heading, hetaOrmen[0].get(LedSpriteProperty.Y))
+        } else if (heading == 0 && hetaOrmen[0].get(LedSpriteProperty.Y) <= 0) {
+            sendSnake(heading, hetaOrmen[0].get(LedSpriteProperty.X))
+        } else if (heading == 180 && hetaOrmen[0].get(LedSpriteProperty.Y) >= 4) {
+            sendSnake(heading, hetaOrmen[0].get(LedSpriteProperty.X))
         } else {
             hetaOrmen[0].move(1)
         }
@@ -138,20 +133,17 @@ function moveCheck () {
 radio.onReceivedString(function (receivedString) {
     radioRecieve = receivedString.split(",")
     if (radioRecieve[0] == "0" && radioRecieve[1] == thisID) {
-        // if packet[3], which is the wall is 1, 3, 2 or implied 4, spawn the snake accordingly
-        snakeLength = parseFloat(radioRecieve[5])
-        if (radioRecieve[3] == "1") {
-            direction = 1
-            createSnake(parseFloat(radioRecieve[4]), 0, 180)
-        } else if (radioRecieve[3] == "3") {
-            direction = 3
-            createSnake(parseFloat(radioRecieve[4]), 4, 0)
-        } else if (radioRecieve[3] == "2") {
-            direction = 2
-            createSnake(4, parseFloat(radioRecieve[4]), 270)
+        // the snake keeps its heading, so the heading alone says which wall it enters from
+        snakeLength = parseFloat(radioRecieve[4])
+        heading = parseFloat(radioRecieve[2])
+        if (heading == 0) {
+            createSnake(parseFloat(radioRecieve[3]), 4, 0)
+        } else if (heading == 90) {
+            createSnake(0, parseFloat(radioRecieve[3]), 90)
+        } else if (heading == 180) {
+            createSnake(parseFloat(radioRecieve[3]), 0, 180)
         } else {
-            direction = 0
-            createSnake(0, parseFloat(radioRecieve[4]), 90)
+            createSnake(4, parseFloat(radioRecieve[3]), 270)
         }
     } else if (radioRecieve[0] == "3" && isInGame) {
         if (allPlayers.indexOf(radioRecieve[1]) == -1) {
@@ -176,10 +168,6 @@ input.onButtonPressed(Button.B, function () {
     if (isSnakeOnScreen() && buttonPressed == false) {
         buttonPressed = true
         hetaOrmen[0].turn(Direction.Right, 90)
-        direction += 1
-        if (direction > 3) {
-            direction = 0
-        }
     }
 })
 input.onGesture(Gesture.Shake, function () {
@@ -188,6 +176,10 @@ input.onGesture(Gesture.Shake, function () {
         createApple()
     }
 })
+// the sprite reports left as -90, so normalise to 0..359
+function getHeading () {
+    return (hetaOrmen[0].get(LedSpriteProperty.Direction) + 360) % 360
+}
 function kollakolission () {
     i = 1
     for (let index = 0; index < snakeLength - 1; index++) {
@@ -202,6 +194,7 @@ function kollakolission () {
 let points = 0
 let i = 0
 let radioRecieve: string[] = []
+let heading = 0
 let appleExists = false
 let apple: game.LedSprite = null
 let appleY = 0
@@ -216,18 +209,15 @@ let buttonPressed = false
 let newSprite: game.LedSprite = null
 let SnakeY = 0
 let SnakeX = 0
-let exitWall = 0
 let thisID = ""
 let isInGame = false
 let alive = false
 let allPlayers: string[] = []
 let hetaOrmen: game.LedSprite[] = []
-let direction = 0
 let snakeLength = 0
 radio.setGroup(69)
 snakeLength = 2
 let timePaused = 750
-direction = 3
 hetaOrmen = []
 allPlayers = []
 alive = true
