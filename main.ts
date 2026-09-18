@@ -315,6 +315,7 @@ let snakeLength = 0
 let isPlayer = false
 let isRelay = false
 radio.setGroup(69)
+radio.setTransmitPower(7)
 if (input.buttonIsPressed(Button.A)) {
     isRelay = true
     basic.showLeds(`
